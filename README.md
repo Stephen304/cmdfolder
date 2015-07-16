@@ -1,4 +1,4 @@
-# CmdFolder
+# CmdFolder [![GoDoc](https://godoc.org/github.com/Stephen304/cmdfolder?status.svg)](https://godoc.org/github.com/Stephen304/cmdfolder)
 CmdFolder is a wrapper around pseudo-terminal-go that allows the creation of mock terminal environments with "folders" that the user can `cd` into and "commands" that may reside in these folders.
 
 ## Usage
