@@ -12,25 +12,33 @@ import (
 )
 
 /*
-Folder is a struct that holds data and methods for a command folder
+Folder is an interface... I don't know what I'm doing.
 */
-type Folder struct {
+type Folder interface {
+	AddCommand(string, func(string))
+	AddFolder(string, Folder)
+}
+
+/*
+DefaultFolder is a struct that holds data and methods for a command folder
+*/
+type DefaultFolder struct {
 	commands   map[string]func(string)
-	subfolders map[string]*Folder
+	subfolders map[string]Folder
 }
 
 /*
 New creates a new command folder
 */
-func New() *Folder {
-	folder := &Folder{commands: make(map[string]func(string)), subfolders: make(map[string]*Folder)}
+func New() *DefaultFolder {
+	folder := &DefaultFolder{commands: make(map[string]func(string)), subfolders: make(map[string]Folder)}
 	return folder
 }
 
 /*
 Run starts the command environment
 */
-func (folder *Folder) Run() {
+func (folder *DefaultFolder) Run() {
 	term, err := terminal.NewWithStdInOut()
 	if err != nil {
 		panic(err)
@@ -55,7 +63,7 @@ func (folder *Folder) Run() {
 /*
 RunWithTerm is used between folder instances to reuse the terminal object and prompt string
 */
-func (folder *Folder) RunWithTerm(prompt string, term *terminal.Terminal) {
+func (folder *DefaultFolder) RunWithTerm(prompt string, term *terminal.Terminal) {
 	term.SetPrompt(fmt.Sprintf(prompt, ""))
 	line, err := term.ReadLine()
 	for {
@@ -80,18 +88,18 @@ func (folder *Folder) RunWithTerm(prompt string, term *terminal.Terminal) {
 /*
 AddCommand adds a function as a command to the folder
 */
-func (folder *Folder) AddCommand(command string, function func(string)) {
+func (folder *DefaultFolder) AddCommand(command string, function func(string)) {
 	folder.commands[command] = function
 }
 
 /*
 AddFolder adds another folder instance as a child of the current folder
 */
-func (folder *Folder) AddFolder(name string, subfolder *Folder) {
+func (folder *DefaultFolder) AddFolder(name string, subfolder Folder) {
 	folder.subfolders[name] = subfolder
 }
 
-func (folder *Folder) ls(_ string) {
+func (folder *DefaultFolder) ls(_ string) {
 	for name := range folder.subfolders {
 		fmt.Println(name)
 	}
