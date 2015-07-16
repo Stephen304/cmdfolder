@@ -19,6 +19,9 @@ type Folder interface {
 	AddFolder(string, Folder)
 	Run()
 	RunWithTerm(string, *terminal.Terminal)
+
+	// Folder default commands
+	Ls(string)
 }
 
 /*
@@ -34,6 +37,7 @@ New creates a new command folder
 */
 func New() Folder {
 	folder := &DefaultFolder{commands: make(map[string]func(string)), subfolders: make(map[string]Folder)}
+	folder.AddCommand("ls", folder.Ls)
 	return folder
 }
 
@@ -111,7 +115,10 @@ func (folder *DefaultFolder) AddFolder(name string, subfolder Folder) {
 	folder.subfolders[name] = subfolder
 }
 
-func (folder *DefaultFolder) ls(_ string) {
+/*
+Ls is the default ls command function which lists the subfolders. It may be overridden.
+*/
+func (folder *DefaultFolder) Ls(_ string) {
 	for name := range folder.subfolders {
 		fmt.Println(name)
 	}
