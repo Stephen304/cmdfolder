@@ -17,6 +17,8 @@ Folder is an interface... I don't know what I'm doing.
 type Folder interface {
 	AddCommand(string, func(string))
 	AddFolder(string, Folder)
+	Run()
+	RunWithTerm(string, *terminal.Terminal)
 }
 
 /*
@@ -30,7 +32,7 @@ type DefaultFolder struct {
 /*
 New creates a new command folder
 */
-func New() *DefaultFolder {
+func New() Folder {
 	folder := &DefaultFolder{commands: make(map[string]func(string)), subfolders: make(map[string]Folder)}
 	return folder
 }
@@ -49,12 +51,13 @@ func (folder *DefaultFolder) Run() {
 	bluen := ansi.ColorFunc("blue+b")
 	magentaen := ansi.ColorFunc("magenta")
 	greenen := ansi.ColorFunc("green")
+	bolden := ansi.ColorFunc("white+b")
 
 	// Make prompt
 	thisUser, _ := user.Current()
 	username := thisUser.Username
 	thisHost, _ := os.Hostname()
-	prompt := bluen(username) + "@" + thisHost + " ~%s " + magentaen("[") + greenen("darkcli") + magentaen("]") + " %% "
+	prompt := bluen(username) + "@" + thisHost + " " + bolden("~%s") + " " + magentaen("[") + greenen("darkcli") + magentaen("]") + " %%"
 
 	// Run it
 	folder.RunWithTerm(prompt, term)
@@ -64,7 +67,7 @@ func (folder *DefaultFolder) Run() {
 RunWithTerm is used between folder instances to reuse the terminal object and prompt string
 */
 func (folder *DefaultFolder) RunWithTerm(prompt string, term *terminal.Terminal) {
-	term.SetPrompt(fmt.Sprintf(prompt, ""))
+	term.SetPrompt(fmt.Sprintf(prompt, "") + " ")
 	line, err := term.ReadLine()
 	for {
 		if err == io.EOF {
@@ -75,7 +78,16 @@ func (folder *DefaultFolder) RunWithTerm(prompt string, term *terminal.Terminal)
 		if (err != nil && strings.Contains(err.Error(), "control-c break")) || len(line) == 0 {
 			line, err = term.ReadLine()
 		} else {
-			if folder.commands[line] != nil {
+			if line == ".." {
+				break
+			} else if strings.HasPrefix(line, "cd ") {
+				if folder.subfolders[line[3:]] != nil {
+					folder.subfolders[line[3:]].RunWithTerm(fmt.Sprintf(prompt, "/"+line[3:]+"%s")+"%", term)
+					term.SetPrompt(fmt.Sprintf(prompt, "") + " ")
+				} else {
+					fmt.Println("Folder not found")
+				}
+			} else if folder.commands[line] != nil {
 				folder.commands[line](line)
 			} else {
 				term.Write([]byte(line + "\r\n"))
